@@ -1,6 +1,6 @@
 import React from 'react';
 import { Package, Users, Clock, BarChart3, LogOut, User } from 'lucide-react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface SidebarProps {
   activeTab: string;

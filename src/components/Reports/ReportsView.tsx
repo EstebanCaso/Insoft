@@ -1,6 +1,6 @@
 import React from 'react';
 import { BarChart3, TrendingUp, AlertTriangle, Package } from 'lucide-react';
-import { Product, Sale, StockAlert } from '../../types';
+import { Product, Sale, StockAlert } from '@/types';
 
 interface ReportsViewProps {
   products: Product[];

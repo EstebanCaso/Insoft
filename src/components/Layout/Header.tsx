@@ -1,6 +1,6 @@
 import React from 'react';
 import { Bell } from 'lucide-react';
-import { StockAlert } from '../../types';
+import { StockAlert } from '@/types';
 
 interface HeaderProps {
   alerts: StockAlert[];

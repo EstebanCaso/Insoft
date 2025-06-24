@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Edit2, Trash2, Plus, Package, AlertTriangle } from 'lucide-react';
-import { Product, Supplier } from '../../types';
-import ProductModal from './ProductModal';
+import { Product, Supplier } from '@/types';
+import ProductModal from '@/components/Inventory/ProductModal';
 
 interface InventoryTableProps {
   products: Product[];

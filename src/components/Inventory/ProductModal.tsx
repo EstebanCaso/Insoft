@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X } from 'lucide-react';
-import { Product, Supplier } from '../../types';
+import { Product, Supplier } from '@/types';
 
 interface ProductModalProps {
   product: Product | null;

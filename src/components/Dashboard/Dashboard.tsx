@@ -1,12 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { useInventory } from '../../hooks/useInventory';
-import { useAuth } from '../../contexts/AuthContext';
-import Sidebar from '../Layout/Sidebar';
-import Header from '../Layout/Header';
-import InventoryTable from '../Inventory/InventoryTable';
-import SuppliersTable from '../Suppliers/SuppliersTable';
-import DayClosing from '../Closing/DayClosing';
-import ReportsView from '../Reports/ReportsView';
+import { useInventory } from '@/hooks/useInventory';
+import { useAuth } from '@/contexts/AuthContext';
+import Sidebar from '@/components/Layout/Sidebar';
+import Header from '@/components/Layout/Header';
+import InventoryTable from '@/components/Inventory/InventoryTable';
+import SuppliersTable from '@/components/Suppliers/SuppliersTable';
+import DayClosing from '@/components/Closing/DayClosing';
+import ReportsView from '@/components/Reports/ReportsView';
 
 const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('inventory');

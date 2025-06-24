@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { AuthProvider, useAuth } from './contexts/AuthContext';
-import LoginForm from './components/Auth/LoginForm';
-import RegisterForm from './components/Auth/RegisterForm';
-import Dashboard from './components/Dashboard/Dashboard';
-import './index.css'; // asegúrate de importar tu CSS base
+import { AuthProvider, useAuth } from '@/contexts/AuthContext';
+import LoginForm from '@/components/Auth/LoginForm';
+import RegisterForm from '@/components/Auth/RegisterForm';
+import Dashboard from '@/components/Dashboard/Dashboard';
+import '@/index.css'; // asegúrate de importar tu CSS base
 
 const AppContent: React.FC = () => {
   const { user, isLoading } = useAuth();

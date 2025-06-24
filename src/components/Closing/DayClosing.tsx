@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, ShoppingCart, DollarSign } from 'lucide-react';
-import { Product, Sale } from '../../types';
-import SaleModal from './SaleModal';
+import { Product, Sale } from '@/types';
+import SaleModal from '@/components/Closing/SaleModal';
 
 interface DayClosingProps {
   products: Product[];

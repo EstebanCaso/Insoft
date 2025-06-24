@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Edit2, Trash2, Plus, Users, Phone, Mail, MapPin } from 'lucide-react';
-import { Supplier } from '../../types';
-import SupplierModal from './SupplierModal';
+import { Supplier } from '@/types';
+import SupplierModal from '@/components/Suppliers/SupplierModal';
 
 interface SuppliersTableProps {
   suppliers: Supplier[];
