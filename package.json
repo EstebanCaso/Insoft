@@ -3,7 +3,7 @@
   "private": true,
   "version": "0.0.0",
   "type": "module",
-  "homepage": "https://tu-usuario.github.io/tu-repositorio",
+  "homepage": "https://EstebanCaso.github.io/insoft",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
