@@ -11,40 +11,36 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. Checkout del código fuente
       - name: Checkout
         uses: actions/checkout@v3
 
-      # 2. Configurar Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: '18'
           cache: 'npm'
 
-      # 3. Instalar dependencias
       - name: Install dependencies
         run: npm ci
 
-      # 4. Ejecutar build
       - name: Build
         run: npm run build
 
-      # 5. Verificar contenido de dist
       - name: Check dist contents
         run: ls -la ./dist
 
-      # 6. Eliminar carpeta .git en dist si existe (prevención de errores)
-      - name: Clean dist .git folder
+      - name: Remove .git folder from dist (if exists)
         run: rm -rf ./dist/.git
 
-      # 7. Configurar Git global (recomendado para evitar errores)
       - name: Setup Git config
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      # 8. Deploy a GitHub Pages
+      # 👇 AQUI agregas el paso para el fallback 404.html
+      - name: Add 404 fallback
+        run: cp dist/index.html dist/404.html
+
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         if: github.ref == 'refs/heads/main'
