@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ReplenishmentRequest } from '@/types';
 import { notifyReorder } from '../utils/sendReorderRequest';
+
 export const useReplenishment = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -94,7 +95,9 @@ export const useReplenishment = () => {
   const updateReplenishmentStatus = async (
     requestId: string,
     status: ReplenishmentRequest['status'],
-    notes?: string
+    notes?: string,
+    productId?: string,
+    quantity?: number
   ): Promise<boolean> => {
     setLoading(true);
     setError(null);
@@ -107,6 +110,21 @@ export const useReplenishment = () => {
 
       if (status === 'approved') {
         updateData.approved_at = new Date().toISOString();
+        // Sumar al inventario si se aprueba
+        if (productId && quantity) {
+          // Obtener el producto actual
+          const { data: productData, error: productError } = await supabase
+            .from('products')
+            .select('current_stock')
+            .eq('id', productId)
+            .single();
+          if (productError) throw productError;
+          const newStock = (productData?.current_stock || 0) + quantity;
+          await supabase
+            .from('products')
+            .update({ current_stock: newStock })
+            .eq('id', productId);
+        }
       } else if (status === 'completed') {
         updateData.completed_at = new Date().toISOString();
       }
@@ -135,11 +153,34 @@ export const useReplenishment = () => {
     }
   };
 
+  const deleteReplenishmentRequest = async (requestId: string): Promise<boolean> => {
+    setLoading(true);
+    setError(null);
+    try {
+      const { error: deleteError } = await supabase
+        .from('replenishment_requests')
+        .delete()
+        .eq('id', requestId);
+      if (deleteError) {
+        throw deleteError;
+      }
+      return true;
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
+      setError(errorMessage);
+      console.error('Error al eliminar solicitud de reabastecimiento:', err);
+      return false;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     error,
     createReplenishmentRequest,
     getReplenishmentRequests,
     updateReplenishmentStatus,
+    deleteReplenishmentRequest,
   };
 }; 

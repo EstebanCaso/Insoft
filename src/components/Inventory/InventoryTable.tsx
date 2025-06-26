@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { Edit2, Trash2, Plus, Package, AlertTriangle, ShoppingCart } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Edit2, Trash2, Plus, Package, AlertTriangle, ShoppingCart, X } from 'lucide-react';
 import { Product, Supplier } from '@/types';
 import ProductModal from '@/components/Inventory/ProductModal';
 import ReplenishmentModal from '@/components/Inventory/ReplenishmentModal';
@@ -25,6 +25,18 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isReplenishmentModalOpen, setIsReplenishmentModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+  const [quickReplenishProduct, setQuickReplenishProduct] = useState<Product | null>(null);
+
+  useEffect(() => {
+    const lowStockProduct = products.find(
+      (product) => product.currentStock > 0 && product.currentStock <= product.minStock
+    );
+    if (lowStockProduct) {
+      setQuickReplenishProduct(lowStockProduct);
+    } else {
+      setQuickReplenishProduct(null);
+    }
+  }, [products]);
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
@@ -79,6 +91,36 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow">
+      {quickReplenishProduct && (
+        <div className="fixed top-8 right-8 z-50">
+          <div className="bg-yellow-100 border border-yellow-300 rounded-lg shadow-lg p-6 flex items-center space-x-4 animate-bounce-in">
+            <AlertTriangle className="w-8 h-8 text-yellow-600" />
+            <div>
+              <div className="font-bold text-yellow-900 mb-1">¡Stock bajo detectado!</div>
+              <div className="text-gray-800 mb-2">
+                <span className="font-semibold">{quickReplenishProduct.name}</span> tiene solo <span className="font-semibold">{quickReplenishProduct.currentStock} {quickReplenishProduct.unit}</span> (mínimo: {quickReplenishProduct.minStock})
+              </div>
+              <button
+                className="bg-gradient-to-r from-orange-400 to-yellow-500 text-white px-4 py-2 rounded-md font-semibold shadow hover:from-orange-500 hover:to-yellow-600 transition-all duration-200 transform hover:scale-105"
+                onClick={() => {
+                  setSelectedProduct(quickReplenishProduct);
+                  setIsReplenishmentModalOpen(true);
+                  setQuickReplenishProduct(null);
+                }}
+              >
+                Reabastecer ahora
+              </button>
+            </div>
+            <button
+              className="ml-2 text-yellow-700 hover:text-yellow-900"
+              onClick={() => setQuickReplenishProduct(null)}
+              title="Cerrar"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+      )}
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Inventario</h2>

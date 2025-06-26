@@ -1,11 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { RefreshCw, CheckCircle, XCircle, Clock, Package } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, Clock, Package, User, Trash2 } from 'lucide-react';
 import { ReplenishmentRequest } from '@/types';
 import { useReplenishment } from '@/hooks/useReplenishment';
+import { useInventory } from '@/hooks/useInventory';
 
 const ReplenishmentRequests: React.FC = () => {
   const [requests, setRequests] = useState<ReplenishmentRequest[]>([]);
-  const { loading, error, getReplenishmentRequests, updateReplenishmentStatus } = useReplenishment();
+  const { loading, error, getReplenishmentRequests, updateReplenishmentStatus, deleteReplenishmentRequest } = useReplenishment();
+  const { loadData } = useInventory();
 
   useEffect(() => {
     loadRequests();
@@ -16,25 +18,52 @@ const ReplenishmentRequests: React.FC = () => {
     setRequests(data);
   };
 
-  const handleStatusUpdate = async (requestId: string, newStatus: ReplenishmentRequest['status']) => {
-    const success = await updateReplenishmentStatus(requestId, newStatus);
+  const handleStatusUpdate = async (request: ReplenishmentRequest, newStatus: ReplenishmentRequest['status']) => {
+    // Asegurar que el productId sea correcto
+    const productId = request.productId || request.product?.id;
+    if (!productId) {
+      alert('Error: No se pudo determinar el producto asociado a la solicitud.');
+      return;
+    }
+    const success = await updateReplenishmentStatus(
+      request.id,
+      newStatus,
+      undefined,
+      productId,
+      request.quantity
+    );
     if (success) {
-      await loadRequests(); // Recargar la lista
+      await loadRequests();
+      await loadData(); // Recargar productos para actualizar el stock en la UI
+      if (newStatus === 'approved') {
+        alert('Solicitud aprobada y stock actualizado.');
+      }
+    } else {
+      alert('Ocurrió un error al actualizar la solicitud.');
+    }
+  };
+
+  const handleDelete = async (requestId: string) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar esta solicitud?')) {
+      const success = await deleteReplenishmentRequest(requestId);
+      if (success) {
+        await loadRequests();
+      }
     }
   };
 
   const getStatusIcon = (status: ReplenishmentRequest['status']) => {
     switch (status) {
       case 'pending':
-        return <Clock className="w-4 h-4 text-yellow-500" />;
+        return <Clock className="w-6 h-6 text-yellow-500" />;
       case 'approved':
-        return <CheckCircle className="w-4 h-4 text-green-500" />;
+        return <CheckCircle className="w-6 h-6 text-green-500" />;
       case 'rejected':
-        return <XCircle className="w-4 h-4 text-red-500" />;
+        return <XCircle className="w-6 h-6 text-red-500" />;
       case 'completed':
-        return <CheckCircle className="w-4 h-4 text-blue-500" />;
+        return <CheckCircle className="w-6 h-6 text-blue-500" />;
       default:
-        return <Clock className="w-4 h-4 text-gray-500" />;
+        return <Clock className="w-6 h-6 text-gray-500" />;
     }
   };
 
@@ -165,33 +194,42 @@ const ReplenishmentRequests: React.FC = () => {
                     {formatDate(request.requestedAt)}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                    {request.status === 'pending' && (
-                      <div className="flex items-center space-x-2">
+                    <div className="flex items-center space-x-4">
+                      {request.status === 'pending' && (
+                        <>
+                          <button
+                            onClick={() => handleStatusUpdate(request, 'approved')}
+                            className="text-green-600 hover:text-green-900 transition-colors px-4 py-2 text-lg rounded-lg border border-green-200 bg-green-50"
+                            title="Aprobar solicitud"
+                          >
+                            <CheckCircle className="w-6 h-6 mr-1" /> Aprobar
+                          </button>
+                          <button
+                            onClick={() => handleStatusUpdate(request, 'rejected')}
+                            className="text-red-600 hover:text-red-900 transition-colors px-4 py-2 text-lg rounded-lg border border-red-200 bg-red-50"
+                            title="Rechazar solicitud"
+                          >
+                            <XCircle className="w-6 h-6 mr-1" /> Rechazar
+                          </button>
+                        </>
+                      )}
+                      {request.status === 'approved' && (
                         <button
-                          onClick={() => handleStatusUpdate(request.id, 'approved')}
-                          className="text-green-600 hover:text-green-900 transition-colors"
-                          title="Aprobar solicitud"
+                          onClick={() => handleStatusUpdate(request, 'completed')}
+                          className="text-blue-600 hover:text-blue-900 transition-colors px-4 py-2 text-lg rounded-lg border border-blue-200 bg-blue-50"
+                          title="Marcar como completada"
                         >
-                          <CheckCircle className="w-4 h-4" />
+                          <CheckCircle className="w-6 h-6 mr-1" /> Completar
                         </button>
-                        <button
-                          onClick={() => handleStatusUpdate(request.id, 'rejected')}
-                          className="text-red-600 hover:text-red-900 transition-colors"
-                          title="Rechazar solicitud"
-                        >
-                          <XCircle className="w-4 h-4" />
-                        </button>
-                      </div>
-                    )}
-                    {request.status === 'approved' && (
+                      )}
                       <button
-                        onClick={() => handleStatusUpdate(request.id, 'completed')}
-                        className="text-blue-600 hover:text-blue-900 transition-colors"
-                        title="Marcar como completada"
+                        onClick={() => handleDelete(request.id)}
+                        className="text-gray-600 hover:text-gray-900 transition-colors px-4 py-2 text-lg rounded-lg border border-gray-200 bg-gray-50"
+                        title="Eliminar solicitud"
                       >
-                        <CheckCircle className="w-4 h-4" />
+                        <Trash2 className="w-6 h-6 mr-1" /> Eliminar
                       </button>
-                    )}
+                    </div>
                   </td>
                 </tr>
               ))}
