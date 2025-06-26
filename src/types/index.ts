@@ -60,3 +60,18 @@ export interface DayClosing {
   closedBy: string;
   createdAt: Date;
 }
+
+export interface ReplenishmentRequest {
+  id: string;
+  productId: string;
+  product?: Product;
+  supplierId: string;
+  supplier?: Supplier;
+  quantity: number;
+  status: 'pending' | 'approved' | 'rejected' | 'completed';
+  requestedBy: string;
+  requestedAt: Date;
+  approvedAt?: Date;
+  completedAt?: Date;
+  notes?: string;
+}

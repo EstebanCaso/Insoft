@@ -3,11 +3,14 @@ import react from '@vitejs/plugin-react';
 import { resolve } from 'path';
 
 export default defineConfig({
-  base: '/Insoft/', 
+  base: '/Insoft/',
   plugins: [react()],
   resolve: {
     alias: {
       '@': resolve(__dirname, './src'),
     },
+  },
+  optimizeDeps: {
+    exclude: ['lucide-react'],
   },
 });

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Edit2, Trash2, Plus, Package, AlertTriangle } from 'lucide-react';
+import { Edit2, Trash2, Plus, Package, AlertTriangle, ShoppingCart } from 'lucide-react';
 import { Product, Supplier } from '@/types';
 import ProductModal from '@/components/Inventory/ProductModal';
+import ReplenishmentModal from '@/components/Inventory/ReplenishmentModal';
 
 interface InventoryTableProps {
   products: Product[];
@@ -9,6 +10,7 @@ interface InventoryTableProps {
   onAddProduct: (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => void;
   onUpdateProduct: (id: string, updates: Partial<Product>) => void;
   onDeleteProduct: (id: string) => void;
+  onRequestReplenishment?: (productId: string, quantity: number, supplierId: string) => Promise<void>;
 }
 
 const InventoryTable: React.FC<InventoryTableProps> = ({
@@ -17,9 +19,12 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
   onAddProduct,
   onUpdateProduct,
   onDeleteProduct,
+  onRequestReplenishment,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [isReplenishmentModalOpen, setIsReplenishmentModalOpen] = useState(false);
+  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
@@ -47,6 +52,17 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
     }
   };
 
+  const handleRequestReplenishment = (product: Product) => {
+    setSelectedProduct(product);
+    setIsReplenishmentModalOpen(true);
+  };
+
+  const handleReplenishmentSubmit = async (productId: string, quantity: number, supplierId: string) => {
+    if (onRequestReplenishment) {
+      await onRequestReplenishment(productId, quantity, supplierId);
+    }
+  };
+
   const getStockStatus = (product: Product) => {
     if (product.currentStock <= 0) {
       return { status: 'out', color: 'text-red-600', bg: 'bg-gradient-to-r from-red-50 to-red-100' };
@@ -55,6 +71,10 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
     } else {
       return { status: 'good', color: 'text-green-600', bg: 'bg-gradient-to-r from-green-50 to-emerald-50' };
     }
+  };
+
+  const getSupplier = (product: Product) => {
+    return suppliers.find(s => s.id === product.supplierId);
   };
 
   return (
@@ -115,6 +135,9 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
             <tbody className="bg-white divide-y divide-gray-200">
               {products.map((product) => {
                 const stockStatus = getStockStatus(product);
+                const supplier = getSupplier(product);
+                const showReplenishmentButton = stockStatus.status === 'low' || stockStatus.status === 'out';
+                
                 return (
                   <tr key={product.id}>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -144,7 +167,7 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
                       {product.minStock} {product.unit}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {product.supplier?.name || 'Sin proveedor'}
+                      {supplier?.name || 'Sin proveedor'}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       ${product.unitPrice.toFixed(2)}
@@ -154,12 +177,23 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
                         <button
                           onClick={() => handleEdit(product)}
                           className="text-blue-600 hover:text-blue-900 transition-colors"
+                          title="Editar producto"
                         >
                           <Edit2 className="w-4 h-4" />
                         </button>
+                        {showReplenishmentButton && supplier && (
+                          <button
+                            onClick={() => handleRequestReplenishment(product)}
+                            className="text-orange-600 hover:text-orange-900 transition-colors"
+                            title="Solicitar reabastecimiento"
+                          >
+                            <ShoppingCart className="w-4 h-4" />
+                          </button>
+                        )}
                         <button
                           onClick={() => handleDelete(product.id)}
                           className="text-red-600 hover:text-red-900 transition-colors"
+                          title="Eliminar producto"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -182,6 +216,18 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
             setIsModalOpen(false);
             setEditingProduct(null);
           }}
+        />
+      )}
+
+      {isReplenishmentModalOpen && selectedProduct && (
+        <ReplenishmentModal
+          product={selectedProduct}
+          supplier={getSupplier(selectedProduct)!}
+          onClose={() => {
+            setIsReplenishmentModalOpen(false);
+            setSelectedProduct(null);
+          }}
+          onSubmit={handleReplenishmentSubmit}
         />
       )}
     </div>

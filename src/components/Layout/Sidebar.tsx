@@ -1,5 +1,5 @@
 import React from 'react';
-import { Package, Users, Clock, BarChart3, LogOut, User } from 'lucide-react';
+import { Package, Users, Clock, BarChart3, LogOut, User, ShoppingCart } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 interface SidebarProps {
@@ -13,6 +13,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
   const menuItems = [
     { id: 'inventory', label: 'Inventario', icon: Package },
     { id: 'suppliers', label: 'Proveedores', icon: Users },
+    { id: 'replenishment', label: 'Reabastecimiento', icon: ShoppingCart },
     { id: 'closing', label: 'Cierre', icon: Clock },
     { id: 'reports', label: 'Reportes', icon: BarChart3 },
   ];

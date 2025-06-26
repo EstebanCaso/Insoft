@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useInventory } from '@/hooks/useInventory';
+import { useReplenishment } from '@/hooks/useReplenishment';
 import { useAuth } from '@/contexts/AuthContext';
 import Sidebar from '@/components/Layout/Sidebar';
 import Header from '@/components/Layout/Header';
@@ -7,6 +8,7 @@ import InventoryTable from '@/components/Inventory/InventoryTable';
 import SuppliersTable from '@/components/Suppliers/SuppliersTable';
 import DayClosing from '@/components/Closing/DayClosing';
 import ReportsView from '@/components/Reports/ReportsView';
+import ReplenishmentRequests from '@/components/Inventory/ReplenishmentRequests';
 
 const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('inventory');
@@ -26,6 +28,8 @@ const Dashboard: React.FC = () => {
     recordSales,
     loadData,
   } = useInventory();
+
+  const { createReplenishmentRequest } = useReplenishment();
 
   // Efecto para crear proveedor default si no hay ninguno
   useEffect(() => {
@@ -52,6 +56,7 @@ const Dashboard: React.FC = () => {
   const tabTitles: Record<string, string> = {
     inventory: 'Inventario',
     suppliers: 'Proveedores',
+    replenishment: 'Reabastecimiento',
     closing: 'Cierre del Día',
     reports: 'Reportes',
   };
@@ -59,6 +64,22 @@ const Dashboard: React.FC = () => {
 
   // Función para ir a reportes
   const goToReports = () => setActiveTab('reports');
+
+  // Función para manejar solicitudes de reabastecimiento
+  const handleReplenishmentRequest = async (productId: string, quantity: number, supplierId: string) => {
+    try {
+      const result = await createReplenishmentRequest(productId, quantity, supplierId);
+      if (result) {
+        // Mostrar notificación de éxito
+        alert('Solicitud de reabastecimiento enviada exitosamente');
+      } else {
+        alert('Error al enviar la solicitud de reabastecimiento');
+      }
+    } catch (error) {
+      console.error('Error en solicitud de reabastecimiento:', error);
+      alert('Error al enviar la solicitud de reabastecimiento');
+    }
+  };
 
   if (isLoading) {
     return (
@@ -81,6 +102,7 @@ const Dashboard: React.FC = () => {
             onAddProduct={addProduct}
             onUpdateProduct={updateProduct}
             onDeleteProduct={deleteProduct}
+            onRequestReplenishment={handleReplenishmentRequest}
           />
         );
       case 'suppliers':
@@ -92,6 +114,8 @@ const Dashboard: React.FC = () => {
             onDeleteSupplier={deleteSupplier}
           />
         );
+      case 'replenishment':
+        return <ReplenishmentRequests />;
       case 'closing':
         return (
           <DayClosing
