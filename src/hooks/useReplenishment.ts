@@ -44,9 +44,6 @@ export const useReplenishment = () => {
         throw insertError;
       }
 
-      // Aquí podrías integrar con n8n para enviar la notificación
-      await sendN8NNotification(data);
-
       return data;
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
@@ -55,48 +52,6 @@ export const useReplenishment = () => {
       return null;
     } finally {
       setLoading(false);
-    }
-  };
-
-  const sendN8NNotification = async (request: ReplenishmentRequest) => {
-    try {
-      // Configuración para n8n webhook
-      const n8nWebhookUrl = import.meta.env.VITE_N8N_WEBHOOK_URL;
-      
-      if (!n8nWebhookUrl) {
-        console.warn('N8N webhook URL no configurada');
-        return;
-      }
-
-      const payload = {
-        event: 'low_stock_replenishment_request',
-        data: {
-          request_id: request.id,
-          product: request.product,
-          supplier: request.supplier,
-          quantity: request.quantity,
-          requested_at: request.requestedAt,
-          status: request.status,
-        },
-        timestamp: new Date().toISOString(),
-      };
-
-      const response = await fetch(n8nWebhookUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(payload),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Error al enviar notificación a n8n: ${response.statusText}`);
-      }
-
-      console.log('Notificación enviada a n8n exitosamente');
-    } catch (err) {
-      console.error('Error al enviar notificación a n8n:', err);
-      // No lanzamos el error para no interrumpir el flujo principal
     }
   };
 
