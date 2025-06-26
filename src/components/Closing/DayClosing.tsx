@@ -2,6 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { Calendar, ShoppingCart, DollarSign } from 'lucide-react';
 import { Product, Sale } from '@/types';
 import SaleModal from '@/components/Closing/SaleModal';
+import { supabase } from '@/lib/supabase';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface DayClosingProps {
   products: Product[];
@@ -11,6 +13,7 @@ interface DayClosingProps {
 const DayClosing: React.FC<DayClosingProps> = ({ products, onRecordSale }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [todaySales, setTodaySales] = useState<Sale[]>([]);
+  const { user } = useAuth();
 
   const today = new Date().toISOString().split('T')[0];
   const todayDate = new Date().toLocaleDateString('es-ES', {
@@ -34,6 +37,24 @@ const DayClosing: React.FC<DayClosingProps> = ({ products, onRecordSale }) => {
     setTodaySales(prev => [...prev, ...newSales]);
     onRecordSale(sales);
     setIsModalOpen(false);
+  };
+
+  const handleSaveDayClosing = async () => {
+    if (!user) return;
+    const totalSales = todaySales.reduce((sum, sale) => sum + sale.quantity, 0);
+    const totalValue = todaySales.reduce((sum, sale) => sum + sale.totalValue, 0);
+    const today = new Date().toISOString().split('T')[0];
+    const { error } = await supabase.from('day_closings').insert({
+      date: today,
+      total_sales: totalSales,
+      total_value: totalValue,
+      closed_by: user.id,
+    });
+    if (error) {
+      alert('Error al guardar el cierre: ' + error.message);
+    } else {
+      alert('Cierre del día guardado exitosamente.');
+    }
   };
 
   const totalSales = todaySales.reduce((sum, sale) => sum + sale.quantity, 0);
@@ -145,6 +166,12 @@ const DayClosing: React.FC<DayClosingProps> = ({ products, onRecordSale }) => {
                     </tbody>
                   </table>
                 </div>
+                <button
+                  onClick={handleSaveDayClosing}
+                  className="mt-6 px-6 py-2 bg-gradient-to-r from-green-600 to-blue-600 text-white rounded-md hover:from-green-700 hover:to-blue-700 transition-all duration-200"
+                >
+                  Guardar cierre del día
+                </button>
               </div>
             )}
           </>

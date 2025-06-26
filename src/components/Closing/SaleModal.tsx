@@ -55,7 +55,7 @@ const SaleModal: React.FC<SaleModalProps> = ({ products, onSave, onClose }) => {
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg max-w-md w-full">
+      <div className="bg-white rounded-lg max-w-lg w-full">
         <div className="flex items-center justify-between p-6 border-b">
           <h2 className="text-xl font-semibold">Registrar Ventas</h2>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
@@ -84,22 +84,29 @@ const SaleModal: React.FC<SaleModalProps> = ({ products, onSave, onClose }) => {
                     ))}
                   </select>
                 </div>
-                <div className="w-24">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Cantidad *</label>
-                  <input
-                    type="number"
-                    value={line.quantity}
-                    onChange={(e) => handleLineChange(idx, 'quantity', parseInt(e.target.value) || 1)}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
-                    min="1"
-                    max={maxQuantity}
-                    required
-                  />
-                  <p className="text-xs text-gray-500 mt-1">Máx: {maxQuantity}</p>
+                <div className="flex flex-col items-end w-36">
+                  <label className="block text-sm font-medium text-gray-700 mb-1 w-full">Cantidad *</label>
+                  <div className="flex items-center w-full">
+                    <input
+                      type="number"
+                      value={line.quantity}
+                      onChange={(e) => handleLineChange(idx, 'quantity', parseInt(e.target.value) || 1)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-orange-500"
+                      min="1"
+                      max={maxQuantity}
+                      required
+                    />
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveLine(idx)}
+                      className="text-red-500 hover:text-red-700 ml-2 flex-shrink-0"
+                      style={{ marginBottom: '2px' }}
+                      title="Eliminar"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
                 </div>
-                <button type="button" onClick={() => handleRemoveLine(idx)} className="text-red-500 hover:text-red-700 ml-2 mb-2">
-                  <Trash2 className="w-4 h-4" />
-                </button>
               </div>
             );
           })}

@@ -92,7 +92,7 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
   return (
     <div className="bg-white rounded-lg shadow">
       {quickReplenishProduct && (
-        <div className="fixed top-8 right-8 z-50">
+        <div className="fixed bottom-8 right-8 z-50">
           <div className="bg-yellow-100 border border-yellow-300 rounded-lg shadow-lg p-6 flex items-center space-x-4 animate-bounce-in">
             <AlertTriangle className="w-8 h-8 text-yellow-600" />
             <div>

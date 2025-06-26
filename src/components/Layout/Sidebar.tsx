@@ -43,8 +43,8 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
                 onClick={() => onTabChange(item.id)}
                 className={`w-full flex items-center px-4 py-3 rounded-lg text-left transition-all duration-200 ${
                   activeTab === item.id
-                    ? 'bg-gradient-to-r from-blue-50 to-purple-50 text-blue-700 border-r-2 border-blue-700 shadow-sm'
-                    : 'text-gray-600 hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:text-gray-900'
+                    ? 'bg-white text-blue-700 ring-2 ring-inset ring-gray-200'
+                    : 'text-gray-700 bg-white hover:bg-gradient-to-r hover:from-gray-50 hover:to-gray-100 hover:text-gray-900'
                 }`}
               >
                 <Icon className="w-5 h-5 mr-3" />

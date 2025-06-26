@@ -1,6 +1,7 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { BarChart3, TrendingUp, AlertTriangle, Package } from 'lucide-react';
-import { Product, Sale, StockAlert } from '@/types';
+import { Product, Sale, StockAlert, DayClosing } from '@/types';
+import { supabase } from '@/lib/supabase';
 
 interface ReportsViewProps {
   products: Product[];
@@ -22,6 +23,27 @@ const ReportsView: React.FC<ReportsViewProps> = ({ products, sales, alerts }) =>
   const categoryEntries = Object.entries(topCategories)
     .sort(([, a], [, b]) => b - a)
     .slice(0, 5);
+
+  const [dayClosings, setDayClosings] = useState<DayClosing[]>([]);
+  useEffect(() => {
+    const fetchClosings = async () => {
+      const { data, error } = await supabase
+        .from('day_closings')
+        .select('*')
+        .order('date', { ascending: false });
+      if (!error && data) {
+        setDayClosings(data.map(row => ({
+          id: row.id,
+          date: row.date,
+          totalSales: row.total_sales,
+          totalValue: row.total_value,
+          closedBy: row.closed_by,
+          createdAt: row.created_at,
+        })));
+      }
+    };
+    fetchClosings();
+  }, []);
 
   return (
     <div className="space-y-6">
@@ -182,6 +204,39 @@ const ReportsView: React.FC<ReportsViewProps> = ({ products, sales, alerts }) =>
           </div>
         </div>
       )}
+
+      {/* Historial de cierres de día */}
+      <div className="bg-white rounded-lg shadow mt-8">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h3 className="text-lg font-semibold text-gray-900">Historial de Cierres de Día</h3>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Fecha</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Vendido</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Valor Total</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {dayClosings.length === 0 ? (
+                <tr>
+                  <td colSpan={3} className="text-center py-8 text-gray-500">No hay cierres registrados</td>
+                </tr>
+              ) : (
+                dayClosings.map((closing) => (
+                  <tr key={closing.id}>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{new Date(closing.date).toLocaleDateString('es-ES')}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{closing.totalSales}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${closing.totalValue.toFixed(2)}</td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+      </div>
     </div>
   );
 };

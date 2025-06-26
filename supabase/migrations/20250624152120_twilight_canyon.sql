@@ -201,3 +201,13 @@ FROM
     JOIN information_schema.constraint_column_usage AS ccu
       ON ccu.constraint_name = tc.constraint_name
 WHERE constraint_type = 'FOREIGN KEY' AND tc.table_name='replenishment_requests';
+
+-- Tabla de cierres diarios
+CREATE TABLE IF NOT EXISTS day_closings (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  date date NOT NULL,
+  total_sales integer NOT NULL,
+  total_value numeric NOT NULL,
+  closed_by uuid REFERENCES auth.users(id) ON DELETE CASCADE,
+  created_at timestamptz DEFAULT now()
+);

@@ -53,12 +53,11 @@ export interface StockAlert {
 
 export interface DayClosing {
   id: string;
-  date: Date;
-  sales: Sale[];
+  date: string; // ISO date string
   totalSales: number;
   totalValue: number;
   closedBy: string;
-  createdAt: Date;
+  createdAt: string;
 }
 
 export interface ReplenishmentRequest {

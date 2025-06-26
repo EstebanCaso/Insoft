@@ -110,6 +110,8 @@ export const useReplenishment = () => {
 
       if (status === 'approved') {
         updateData.approved_at = new Date().toISOString();
+        updateData.status = 'completed';
+        updateData.completed_at = new Date().toISOString();
         // Sumar al inventario si se aprueba
         if (productId && quantity) {
           // Obtener el producto actual
