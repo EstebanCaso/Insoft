@@ -37,7 +37,7 @@ const LoginForm: React.FC<LoginFormProps> = ({ onToggleMode }) => {
           <div className="w-12 h-12 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center mx-auto mb-4">
             <Package className="w-6 h-6 text-white" />
           </div>
-          <h1 className="text-2xl font-bold text-gray-900">Sistema de Inventario</h1>
+          <h1 className="text-2xl font-bold text-gray-900">InSoft</h1>
           <p className="text-gray-600 mt-2">Inicia sesión para acceder al panel</p>
         </div>
 

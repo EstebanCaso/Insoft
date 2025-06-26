@@ -31,7 +31,7 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
           <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-lg flex items-center justify-center">
             <Package className="w-5 h-5 text-white" />
           </div>
-          <h2 className="text-xl font-bold text-gray-800">INSOFT</h2>
+          <h2 className="text-xl font-bold text-gray-800">InSoft</h2>
         </div>
         
         <nav className="space-y-2">
