@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ReplenishmentRequest } from '@/types';
-
+import { notifyReorder } from '../utils/sendReorderRequest';
 export const useReplenishment = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -43,6 +43,13 @@ export const useReplenishment = () => {
       if (insertError) {
         throw insertError;
       }
+
+      // Aquí podrías integrar con n8n para enviar la notificación
+      await notifyReorder({
+        providerPhone: data.supplier.phone,
+        productName: data.product.name,
+        quantity: data.quantity
+      });
 
       return data;
     } catch (err) {
