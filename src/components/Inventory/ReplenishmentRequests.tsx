@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { RefreshCw, CheckCircle, XCircle, Clock, Package, User } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, Clock, Package } from 'lucide-react';
 import { ReplenishmentRequest } from '@/types';
 import { useReplenishment } from '@/hooks/useReplenishment';
 
