@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '../contexts/AuthContext';
-import { Product, Supplier, Sale, StockAlert } from '../types';
+import { useProfile } from '@/contexts/ProfileContext';
+import { Product, Supplier, Sale, StockAlert, Profile } from '../types';
 
 export const useInventory = () => {
   const { user } = useAuth();
+  const { profile } = useProfile();
   const [products, setProducts] = useState<Product[]>([]);
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [sales, setSales] = useState<Sale[]>([]);
@@ -12,10 +14,10 @@ export const useInventory = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (user) {
+    if (user && profile) {
       loadData();
     }
-  }, [user]);
+  }, [user, profile]);
 
   const loadData = async () => {
     if (!user) return;
@@ -35,12 +37,13 @@ export const useInventory = () => {
   };
 
   const loadSuppliers = async () => {
-    if (!user) return;
+    if (!user || !profile) return;
 
     const { data, error } = await supabase
       .from('suppliers')
       .select('*')
       .eq('user_id', user.id)
+      .eq('profile_id', profile.id)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -56,13 +59,14 @@ export const useInventory = () => {
       email: supplier.email || undefined,
       address: supplier.address || undefined,
       createdAt: new Date(supplier.created_at),
+      profileId: supplier.profile_id,
     }));
 
     setSuppliers(mappedSuppliers);
   };
 
   const loadProducts = async () => {
-    if (!user) return;
+    if (!user || !profile) return;
 
     const { data, error } = await supabase
       .from('products')
@@ -79,6 +83,7 @@ export const useInventory = () => {
         )
       `)
       .eq('user_id', user.id)
+      .eq('profile_id', profile.id)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -109,6 +114,7 @@ export const useInventory = () => {
       unit: product.unit,
       createdAt: new Date(product.created_at),
       updatedAt: new Date(product.updated_at),
+      profileId: product.profile_id,
     }));
 
     setProducts(mappedProducts);
@@ -116,7 +122,7 @@ export const useInventory = () => {
   };
 
   const loadSales = async () => {
-    if (!user) return;
+    if (!user || !profile) return;
 
     const { data, error } = await supabase
       .from('sales')
@@ -129,6 +135,7 @@ export const useInventory = () => {
         )
       `)
       .eq('user_id', user.id)
+      .eq('profile_id', profile.id)
       .order('created_at', { ascending: false });
 
     if (error) {
@@ -142,6 +149,7 @@ export const useInventory = () => {
       quantity: sale.quantity,
       date: new Date(sale.sale_date),
       totalValue: sale.total_value,
+      profileId: sale.profile_id,
     }));
 
     setSales(mappedSales);
@@ -176,7 +184,7 @@ export const useInventory = () => {
   };
 
   const addProduct = async (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => {
-    if (!user) return;
+    if (!user || !profile) return;
 
     const { data, error } = await supabase
       .from('products')
@@ -192,6 +200,7 @@ export const useInventory = () => {
         sku: product.sku || null,
         unit: product.unit,
         user_id: user.id,
+        profile_id: profile.id,
       })
       .select()
       .single();
@@ -251,7 +260,7 @@ export const useInventory = () => {
   };
 
   const addSupplier = async (supplier: Omit<Supplier, 'id' | 'createdAt'>) => {
-    if (!user) return;
+    if (!user || !profile) return;
 
     const { error } = await supabase
       .from('suppliers')
@@ -262,6 +271,7 @@ export const useInventory = () => {
         email: supplier.email || null,
         address: supplier.address || null,
         user_id: user.id,
+        profile_id: profile.id,
       });
 
     if (error) {
@@ -314,9 +324,8 @@ export const useInventory = () => {
   };
 
   const recordSale = async (sale: Omit<Sale, 'id'>) => {
-    if (!user) return;
+    if (!user || !profile) return;
 
-    // Start a transaction to record sale and update stock
     const { error: saleError } = await supabase
       .from('sales')
       .insert({
@@ -325,6 +334,7 @@ export const useInventory = () => {
         total_value: sale.totalValue,
         sale_date: sale.date.toISOString(),
         user_id: user.id,
+        profile_id: profile.id,
       });
 
     if (saleError) {
@@ -342,9 +352,8 @@ export const useInventory = () => {
     await loadSales();
   };
 
-  // Registra varias ventas de golpe
   const recordSales = async (sales: Omit<Sale, 'id'>[]) => {
-    if (!user) return;
+    if (!user || !profile) return;
     // Inserta todas las ventas
     const salesToInsert = sales.map(sale => ({
       product_id: sale.productId,
@@ -352,6 +361,7 @@ export const useInventory = () => {
       total_value: sale.totalValue,
       sale_date: sale.date.toISOString(),
       user_id: user.id,
+      profile_id: profile.id,
     }));
     const { error: salesError } = await supabase
       .from('sales')
@@ -371,6 +381,49 @@ export const useInventory = () => {
     await loadSales();
   };
 
+  // CRUD de perfiles/locales
+  const getProfiles = async (): Promise<Profile[]> => {
+    if (!user) return [];
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+    if (error) {
+      console.error('Error loading profiles:', error);
+      return [];
+    }
+    return data || [];
+  };
+
+  const createProfile = async (profile: Omit<Profile, 'id' | 'userId' | 'createdAt'>) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from('profiles')
+      .insert({
+        name: profile.name,
+        address: profile.address || null,
+        user_id: user.id,
+      });
+    if (error) {
+      console.error('Error creating profile:', error);
+      throw error;
+    }
+  };
+
+  const deleteProfile = async (id: string) => {
+    if (!user) return;
+    const { error } = await supabase
+      .from('profiles')
+      .delete()
+      .eq('id', id)
+      .eq('user_id', user.id);
+    if (error) {
+      console.error('Error deleting profile:', error);
+      throw error;
+    }
+  };
+
   return {
     products,
     suppliers,
@@ -386,5 +439,8 @@ export const useInventory = () => {
     recordSale,
     recordSales,
     loadData,
+    getProfiles,
+    createProfile,
+    deleteProfile,
   };
 };

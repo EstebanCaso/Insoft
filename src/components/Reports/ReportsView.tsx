@@ -9,7 +9,7 @@ interface ReportsViewProps {
   alerts: StockAlert[];
 }
 
-const ReportsView: React.FC<ReportsViewProps> = ({ products, sales, alerts }) => {
+const ReportsView: React.FC<ReportsViewProps> = ({ products,}) => {
   const totalProducts = products.length;
   const totalValue = products.reduce((sum, product) => sum + (product.currentStock * product.unitPrice), 0);
   const lowStockProducts = products.filter(product => product.currentStock <= product.minStock);

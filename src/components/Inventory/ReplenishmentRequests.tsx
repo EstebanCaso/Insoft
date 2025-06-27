@@ -1,10 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { RefreshCw, CheckCircle, XCircle, Clock, Package, User, Trash2 } from 'lucide-react';
+import { RefreshCw, CheckCircle, XCircle, Clock, Package,Trash2 } from 'lucide-react';
 import { ReplenishmentRequest } from '@/types';
 import { useReplenishment } from '@/hooks/useReplenishment';
 import { useInventory } from '@/hooks/useInventory';
 
-const ReplenishmentRequests: React.FC = () => {
+const ReplenishmentRequests: React.FC<{ onRequestCreated?: () => void }> = ({ onRequestCreated }) => {
   const [requests, setRequests] = useState<ReplenishmentRequest[]>([]);
   const { loading, error, getReplenishmentRequests, updateReplenishmentStatus, deleteReplenishmentRequest } = useReplenishment();
   const { loadData } = useInventory();
@@ -12,6 +12,13 @@ const ReplenishmentRequests: React.FC = () => {
   useEffect(() => {
     loadRequests();
   }, []);
+
+  // Exponer la función loadRequests para que otros componentes puedan llamarla
+  useEffect(() => {
+    if (onRequestCreated) {
+      onRequestCreated = loadRequests;
+    }
+  }, [onRequestCreated]);
 
   const loadRequests = async () => {
     const data = await getReplenishmentRequests();
@@ -141,10 +148,7 @@ const ReplenishmentRequests: React.FC = () => {
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Producto
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Cantidad
+                  Productos solicitados
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Proveedor
@@ -164,20 +168,19 @@ const ReplenishmentRequests: React.FC = () => {
               {requests.map((request) => (
                 <tr key={request.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center">
-                      <Package className="w-5 h-5 text-blue-600 mr-3" />
-                      <div>
-                        <div className="text-sm font-medium text-gray-900">
-                          {request.product?.name || 'Producto no encontrado'}
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          ID: {request.productId}
-                        </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                    {request.quantity} {request.product?.unit || 'unidades'}
+                    <ul>
+                      {Array.isArray(request.products) && request.products.length > 0 ? (
+                        request.products.map((prod: any) => (
+                          <li key={prod.productId}>
+                            <span className="font-medium">{prod.name}</span> — {prod.quantity} unidades
+                          </li>
+                        ))
+                      ) : (
+                        <li>
+                          {request.product?.name || 'Producto no encontrado'} — {request.quantity} {request.product?.unit || 'unidades'}
+                        </li>
+                      )}
+                    </ul>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                     {request.supplier?.name || 'Proveedor no encontrado'}

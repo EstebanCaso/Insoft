@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ReplenishmentRequest } from '@/types';
 import { notifyReorder } from '../utils/sendReorderRequest';
+import { useProfile } from '@/contexts/ProfileContext';
 
 export const useReplenishment = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const { profile } = useProfile();
 
   const createReplenishmentRequest = async (
     productId: string,
@@ -19,8 +21,8 @@ export const useReplenishment = () => {
       // Obtener el usuario actual
       const { data: { user } } = await supabase.auth.getUser();
       
-      if (!user) {
-        throw new Error('Usuario no autenticado');
+      if (!user || !profile) {
+        throw new Error('Usuario o perfil no autenticado');
       }
 
       // Crear la solicitud de reabastecimiento
@@ -33,6 +35,7 @@ export const useReplenishment = () => {
           status: 'pending',
           requested_by: user.id,
           requested_at: new Date().toISOString(),
+          profile_id: profile.id,
         })
         .select(`
           *,
@@ -68,19 +71,48 @@ export const useReplenishment = () => {
     setError(null);
 
     try {
-      const { data, error: fetchError } = await supabase
+      if (!profile) {
+        console.log('No profile available, returning empty array');
+        return [];
+      }
+      
+      console.log('Fetching replenishment requests for profile:', profile.id);
+      
+      // Primero intentar con profile_id, si falla, usar solo user_id
+      let { data, error: fetchError } = await supabase
         .from('replenishment_requests')
         .select(`
           *,
           product:products(*),
           supplier:suppliers(*)
         `)
+        .eq('profile_id', profile.id)
         .order('requested_at', { ascending: false });
 
+      // Si hay error, intentar sin profile_id (para registros existentes)
       if (fetchError) {
-        throw fetchError;
+        console.log('Error con profile_id, intentando sin filtro de perfil:', fetchError);
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) return [];
+        
+        const { data: fallbackData, error: fallbackError } = await supabase
+          .from('replenishment_requests')
+          .select(`
+            *,
+            product:products(*),
+            supplier:suppliers(*)
+          `)
+          .eq('requested_by', user.id)
+          .order('requested_at', { ascending: false });
+
+        if (fallbackError) {
+          console.error('Fallback query also failed:', fallbackError);
+          throw fallbackError;
+        }
+        data = fallbackData;
       }
 
+      console.log('Successfully fetched replenishment requests:', data?.length || 0);
       return data || [];
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'Error desconocido';
@@ -177,6 +209,74 @@ export const useReplenishment = () => {
     }
   };
 
+  const createMultiReplenishmentRequest = async (
+    supplierId: string,
+    products: { productId: string; name: string; quantity: number }[]
+  ): Promise<any> => {
+    setLoading(true);
+    setError(null);
+
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Usuario no autenticado');
+
+      // Crear una solicitud por cada producto para evitar problemas con la estructura
+      const results = [];
+      
+      for (const product of products) {
+        const { data, error: insertError } = await supabase
+          .from('replenishment_requests')
+          .insert({
+            product_id: product.productId,
+            supplier_id: supplierId,
+            quantity: product.quantity,
+            status: 'pending',
+            requested_by: user.id,
+            requested_at: new Date().toISOString(),
+            profile_id: profile?.id || null,
+          })
+          .select('*')
+          .single();
+
+        if (insertError) {
+          console.error('Error inserting replenishment request:', insertError);
+          throw insertError;
+        }
+        
+        results.push(data);
+      }
+
+      // Notificar a n8n con múltiples productos
+      try {
+        const supplier = await supabase
+          .from('suppliers')
+          .select('phone')
+          .eq('id', supplierId)
+          .single();
+
+        if (supplier.data?.phone) {
+          const productList = products.map(p => `${p.name}: ${p.quantity}`).join(', ');
+          await notifyReorder({
+            providerPhone: supplier.data.phone,
+            productName: productList,
+            quantity: products.reduce((sum, p) => sum + p.quantity, 0)
+          });
+        }
+      } catch (notifyError) {
+        console.error('Error notifying n8n:', notifyError);
+        // No fallar si la notificación falla
+      }
+
+      return results;
+    } catch (err: any) {
+      console.error('Error in createMultiReplenishmentRequest:', err);
+      setError(err.message || 'Error desconocido');
+      return null;
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     loading,
     error,
@@ -184,5 +284,6 @@ export const useReplenishment = () => {
     getReplenishmentRequests,
     updateReplenishmentStatus,
     deleteReplenishmentRequest,
+    createMultiReplenishmentRequest,
   };
 }; 

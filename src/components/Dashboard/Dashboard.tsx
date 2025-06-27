@@ -9,9 +9,12 @@ import SuppliersTable from '@/components/Suppliers/SuppliersTable';
 import DayClosing from '@/components/Closing/DayClosing';
 import ReportsView from '@/components/Reports/ReportsView';
 import ReplenishmentRequests from '@/components/Inventory/ReplenishmentRequests';
+import { useProfile } from '@/contexts/ProfileContext';
+import InitialProfileSelector from '@/components/Layout/InitialProfileSelector';
 
 const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState('inventory');
+  const [refreshReplenishment, setRefreshReplenishment] = useState(0);
   const { user } = useAuth();
   const {
     products,
@@ -30,6 +33,7 @@ const Dashboard: React.FC = () => {
   } = useInventory();
 
   const { createReplenishmentRequest } = useReplenishment();
+  const { profile } = useProfile();
 
   // Efecto para crear proveedor default si no hay ninguno
   useEffect(() => {
@@ -70,8 +74,8 @@ const Dashboard: React.FC = () => {
     try {
       const result = await createReplenishmentRequest(productId, quantity, supplierId);
       if (result) {
-        // Mostrar notificación de éxito
-        alert('Solicitud de reabastecimiento enviada exitosamente');
+        // Recargar solicitudes
+        setRefreshReplenishment(prev => prev + 1);
       } else {
         alert('Error al enviar la solicitud de reabastecimiento');
       }
@@ -80,6 +84,15 @@ const Dashboard: React.FC = () => {
       alert('Error al enviar la solicitud de reabastecimiento');
     }
   };
+
+  // Función para recargar solicitudes
+  const handleReplenishmentRefresh = () => {
+    setRefreshReplenishment(prev => prev + 1);
+  };
+
+  if (!profile) {
+    return <InitialProfileSelector />;
+  }
 
   if (isLoading) {
     return (
@@ -103,6 +116,10 @@ const Dashboard: React.FC = () => {
             onUpdateProduct={updateProduct}
             onDeleteProduct={deleteProduct}
             onRequestReplenishment={handleReplenishmentRequest}
+            onDataReload={() => {
+              loadData();
+              handleReplenishmentRefresh();
+            }}
           />
         );
       case 'suppliers':
@@ -115,7 +132,7 @@ const Dashboard: React.FC = () => {
           />
         );
       case 'replenishment':
-        return <ReplenishmentRequests />;
+        return <ReplenishmentRequests key={refreshReplenishment} />;
       case 'closing':
         return (
           <DayClosing

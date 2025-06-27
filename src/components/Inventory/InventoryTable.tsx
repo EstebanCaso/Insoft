@@ -3,6 +3,8 @@ import { Edit2, Trash2, Plus, Package, AlertTriangle, ShoppingCart, X } from 'lu
 import { Product, Supplier } from '@/types';
 import ProductModal from '@/components/Inventory/ProductModal';
 import ReplenishmentModal from '@/components/Inventory/ReplenishmentModal';
+import MultiReplenishmentModal from '@/components/Inventory/MultiReplenishmentModal';
+import { useReplenishment } from '@/hooks/useReplenishment';
 
 interface InventoryTableProps {
   products: Product[];
@@ -11,6 +13,7 @@ interface InventoryTableProps {
   onUpdateProduct: (id: string, updates: Partial<Product>) => void;
   onDeleteProduct: (id: string) => void;
   onRequestReplenishment?: (productId: string, quantity: number, supplierId: string) => Promise<void>;
+  onDataReload?: () => void;
 }
 
 const InventoryTable: React.FC<InventoryTableProps> = ({
@@ -20,23 +23,15 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
   onUpdateProduct,
   onDeleteProduct,
   onRequestReplenishment,
+  onDataReload,
 }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
   const [isReplenishmentModalOpen, setIsReplenishmentModalOpen] = useState(false);
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
-  const [quickReplenishProduct, setQuickReplenishProduct] = useState<Product | null>(null);
-
-  useEffect(() => {
-    const lowStockProduct = products.find(
-      (product) => product.currentStock > 0 && product.currentStock <= product.minStock
-    );
-    if (lowStockProduct) {
-      setQuickReplenishProduct(lowStockProduct);
-    } else {
-      setQuickReplenishProduct(null);
-    }
-  }, [products]);
+  const [multiModalSupplier, setMultiModalSupplier] = useState<Supplier | null>(null);
+  const [multiModalProducts, setMultiModalProducts] = useState<Product[]>([]);
+  const { createMultiReplenishmentRequest } = useReplenishment();
 
   const handleEdit = (product: Product) => {
     setEditingProduct(product);
@@ -75,6 +70,33 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
     }
   };
 
+  const handleOpenMultiModal = (supplierId: string) => {
+    const supplier = suppliers.find(s => s.id === supplierId);
+    if (supplier) {
+      setMultiModalSupplier(supplier);
+      setMultiModalProducts(products.filter(p => p.supplierId === supplierId));
+    }
+  };
+
+  const handleMultiSubmit = async (selectedProducts: { productId: string; name: string; quantity: number }[]) => {
+    if (!multiModalSupplier) return;
+    const result = await createMultiReplenishmentRequest(multiModalSupplier.id, selectedProducts);
+    setMultiModalSupplier(null);
+    setMultiModalProducts([]);
+    
+    if (result) {
+      // Recargar datos para actualizar la pestaña de reabastecimiento
+       // Mostrar notificación de éxito
+      alert('Solicitud de reabastecimiento múltiple enviada exitosamente');
+
+      if (onDataReload) {
+        onDataReload();
+      }
+    } else {
+      alert('Error al enviar la solicitud de reabastecimiento múltiple');
+    }
+  };
+
   const getStockStatus = (product: Product) => {
     if (product.currentStock <= 0) {
       return { status: 'out', color: 'text-red-600', bg: 'bg-gradient-to-r from-red-50 to-red-100' };
@@ -91,36 +113,6 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
 
   return (
     <div className="bg-white rounded-lg shadow">
-      {quickReplenishProduct && (
-        <div className="fixed bottom-8 right-8 z-50">
-          <div className="bg-yellow-100 border border-yellow-300 rounded-lg shadow-lg p-6 flex items-center space-x-4 animate-bounce-in">
-            <AlertTriangle className="w-8 h-8 text-yellow-600" />
-            <div>
-              <div className="font-bold text-yellow-900 mb-1">¡Stock bajo detectado!</div>
-              <div className="text-gray-800 mb-2">
-                <span className="font-semibold">{quickReplenishProduct.name}</span> tiene solo <span className="font-semibold">{quickReplenishProduct.currentStock} {quickReplenishProduct.unit}</span> (mínimo: {quickReplenishProduct.minStock})
-              </div>
-              <button
-                className="bg-gradient-to-r from-orange-400 to-yellow-500 text-white px-4 py-2 rounded-md font-semibold shadow hover:from-orange-500 hover:to-yellow-600 transition-all duration-200 transform hover:scale-105"
-                onClick={() => {
-                  setSelectedProduct(quickReplenishProduct);
-                  setIsReplenishmentModalOpen(true);
-                  setQuickReplenishProduct(null);
-                }}
-              >
-                Reabastecer ahora
-              </button>
-            </div>
-            <button
-              className="ml-2 text-yellow-700 hover:text-yellow-900"
-              onClick={() => setQuickReplenishProduct(null)}
-              title="Cerrar"
-            >
-              <X className="w-5 h-5" />
-            </button>
-          </div>
-        </div>
-      )}
       <div className="px-6 py-4 border-b border-gray-200">
         <div className="flex items-center justify-between">
           <h2 className="text-lg font-semibold text-gray-900">Inventario</h2>
@@ -270,6 +262,35 @@ const InventoryTable: React.FC<InventoryTableProps> = ({
             setSelectedProduct(null);
           }}
           onSubmit={handleReplenishmentSubmit}
+        />
+      )}
+
+      {/* Botones para reabastecimiento múltiple por proveedor */}
+      <div className="flex flex-col gap-4 p-4">
+        {suppliers.map((supplier) => {
+          // Filtrar productos de bajo stock para este proveedor (incluyendo stock 0)
+          const lowStockProducts = products.filter(
+            p => p.supplierId === supplier.id && p.currentStock <= p.minStock
+          );
+          if (lowStockProducts.length === 0) return null;
+          return (
+            <button
+              key={supplier.id}
+              onClick={() => handleOpenMultiModal(supplier.id)}
+              className="flex items-center justify-center px-6 py-3 bg-gradient-to-r from-orange-400 to-yellow-500 text-white rounded-lg font-semibold shadow hover:from-orange-500 hover:to-yellow-600 transition-all duration-200 transform hover:scale-105"
+            >
+              <span className="mr-2">🛒</span>
+              Reabastecer productos de {supplier.name} ({lowStockProducts.length} productos)
+            </button>
+          );
+        })}
+      </div>
+      {multiModalSupplier && (
+        <MultiReplenishmentModal
+          supplier={multiModalSupplier}
+          products={multiModalProducts}
+          onClose={() => setMultiModalSupplier(null)}
+          onSubmit={handleMultiSubmit}
         />
       )}
     </div>

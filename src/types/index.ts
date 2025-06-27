@@ -31,6 +31,7 @@ export interface Product {
   unit: string; // 'pieces', 'kg', 'liters', etc.
   createdAt: Date;
   updatedAt: Date;
+  profileId: string;
 }
 
 export interface Sale {
@@ -73,4 +74,13 @@ export interface ReplenishmentRequest {
   approvedAt?: Date;
   completedAt?: Date;
   notes?: string;
+  products?: { productId: string; name: string; quantity: number }[]; // Para solicitudes múltiples
+}
+
+export interface Profile {
+  id: string;
+  userId: string;
+  name: string;
+  address?: string;
+  createdAt: string;
 }
