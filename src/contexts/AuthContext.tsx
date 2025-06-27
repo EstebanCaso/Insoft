@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 interface AuthContextType {
   user: User | null;
   login: (email: string, password: string) => Promise<boolean>;
-  register: (email: string, password: string, username: string) => Promise<boolean>;
+  register: (email: string, password: string, username: string, phone: string) => Promise<boolean>;
   logout: () => Promise<void>;
   isLoading: boolean;
 }
@@ -61,7 +61,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (email: string, password: string, username: string): Promise<boolean> => {
+  const register = async (email: string, password: string, username: string, phone: string): Promise<boolean> => {
     try {
       const { error } = await supabase.auth.signUp({
         email,
@@ -69,16 +69,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         options: {
           data: {
             username: username,
+            phone: phone,
             role: 'admin',
           },
         },
       });
-      
+
       if (error) {
         console.error('Registration error:', error.message);
         return false;
       }
-      
+
       return true;
     } catch (error) {
       console.error('Registration error:', error);

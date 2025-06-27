@@ -39,18 +39,16 @@ const Dashboard: React.FC = () => {
   useEffect(() => {
     if (user && !isLoading) {
       // Verifica si existe un proveedor con nombre 'default_'
-      const hasDefault = suppliers.some(s => s.name === 'default_');
+      const hasDefault = suppliers.some(s => s.name === 'default');
       if (!hasDefault) {
         const defaultSupplier = {
-          name: 'default_',
+          name: 'default',
           contact: user.user_metadata?.username || user.email || 'Administrador',
-          phone: '',
+          phone: user.user_metadata?.phone || '',
           email: user.email || '',
-          address: '',
+          address: profile?.address || '',
         };
-        addSupplier(defaultSupplier).then(() => {
-          loadData();
-        });
+        addSupplier(defaultSupplier)
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps

@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Edit2, Trash2, Plus, Package, AlertTriangle, ShoppingCart, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Edit2, Trash2, Plus, Package, AlertTriangle, ShoppingCart } from 'lucide-react';
 import { Product, Supplier } from '@/types';
 import ProductModal from '@/components/Inventory/ProductModal';
 import ReplenishmentModal from '@/components/Inventory/ReplenishmentModal';

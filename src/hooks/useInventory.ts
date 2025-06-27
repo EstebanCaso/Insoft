@@ -186,7 +186,7 @@ export const useInventory = () => {
   const addProduct = async (product: Omit<Product, 'id' | 'createdAt' | 'updatedAt'>) => {
     if (!user || !profile) return;
 
-    const { data, error } = await supabase
+    const {  error } = await supabase
       .from('products')
       .insert({
         name: product.name,

@@ -11,6 +11,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onToggleMode }) => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [phone, setPhone] = useState('');
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [success, setSuccess] = useState(false);
@@ -33,7 +34,7 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onToggleMode }) => {
     setIsLoading(true);
 
     try {
-      const success = await register(email, password, username);
+      const success = await register(email, password, username, phone);
       if (success) {
         setSuccess(true);
       } else {
@@ -106,6 +107,21 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ onToggleMode }) => {
               onChange={(e) => setEmail(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Ingresa tu email"
+              required
+            />
+          </div>
+
+          <div>
+            <label htmlFor="phone" className="block text-sm font-medium text-gray-700 mb-2">
+              Teléfono
+            </label>
+            <input
+              type="tel"
+              id="phone"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              placeholder="Ingresa tu número de teléfono"
               required
             />
           </div>

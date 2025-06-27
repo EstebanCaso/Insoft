@@ -72,7 +72,13 @@ const Sidebar: React.FC<SidebarProps> = ({ activeTab, onTabChange }) => {
   ];
 
   const handleLogout = async () => {
-    await logout();
+    try {
+      await logout();
+    } catch (e) {
+      // Puedes mostrar un mensaje de error si quieres
+    } finally {
+      window.location.href = '/'; // Redirige a la raíz, que muestra el login
+    }
   };
 
   return (

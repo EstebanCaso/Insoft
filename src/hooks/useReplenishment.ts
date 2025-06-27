@@ -1,13 +1,14 @@
 import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { ReplenishmentRequest } from '@/types';
-import { notifyReorder } from '../utils/sendReorderRequest';
 import { useProfile } from '@/contexts/ProfileContext';
+import { useAuth } from '@/contexts/AuthContext';
 
 export const useReplenishment = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { profile } = useProfile();
+  const {  } = useAuth();
 
   const createReplenishmentRequest = async (
     productId: string,
@@ -19,9 +20,8 @@ export const useReplenishment = () => {
 
     try {
       // Obtener el usuario actual
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user || !profile) {
+      const { data: { user: supaUser } } = await supabase.auth.getUser();
+      if (!supaUser || !profile) {
         throw new Error('Usuario o perfil no autenticado');
       }
 
@@ -33,7 +33,7 @@ export const useReplenishment = () => {
           supplier_id: supplierId,
           quantity,
           status: 'pending',
-          requested_by: user.id,
+          requested_by: supaUser.id,
           requested_at: new Date().toISOString(),
           profile_id: profile.id,
         })
@@ -47,13 +47,6 @@ export const useReplenishment = () => {
       if (insertError) {
         throw insertError;
       }
-
-      // Aquí podrías integrar con n8n para enviar la notificación
-      await notifyReorder({
-        providerPhone: data.supplier.phone,
-        productName: data.product.name,
-        quantity: data.quantity
-      });
 
       return data;
     } catch (err) {
@@ -217,12 +210,11 @@ export const useReplenishment = () => {
     setError(null);
 
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Usuario no autenticado');
+      const { data: { user: supaUser } } = await supabase.auth.getUser();
+      if (!supaUser) throw new Error('Usuario no autenticado');
 
       // Crear una solicitud por cada producto para evitar problemas con la estructura
       const results = [];
-      
       for (const product of products) {
         const { data, error: insertError } = await supabase
           .from('replenishment_requests')
@@ -231,42 +223,18 @@ export const useReplenishment = () => {
             supplier_id: supplierId,
             quantity: product.quantity,
             status: 'pending',
-            requested_by: user.id,
+            requested_by: supaUser.id,
             requested_at: new Date().toISOString(),
             profile_id: profile?.id || null,
           })
           .select('*')
           .single();
-
         if (insertError) {
           console.error('Error inserting replenishment request:', insertError);
           throw insertError;
         }
-        
         results.push(data);
       }
-
-      // Notificar a n8n con múltiples productos
-      try {
-        const supplier = await supabase
-          .from('suppliers')
-          .select('phone')
-          .eq('id', supplierId)
-          .single();
-
-        if (supplier.data?.phone) {
-          const productList = products.map(p => `${p.name}: ${p.quantity}`).join(', ');
-          await notifyReorder({
-            providerPhone: supplier.data.phone,
-            productName: productList,
-            quantity: products.reduce((sum, p) => sum + p.quantity, 0)
-          });
-        }
-      } catch (notifyError) {
-        console.error('Error notifying n8n:', notifyError);
-        // No fallar si la notificación falla
-      }
-
       return results;
     } catch (err: any) {
       console.error('Error in createMultiReplenishmentRequest:', err);
