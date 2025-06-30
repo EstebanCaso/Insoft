@@ -66,3 +66,30 @@ npm run dev
 - Tailwind CSS
 - Supabase
 - Lucide React 
+
+## Integración con n8n y WhatsApp (Twilio)
+
+Para enviar mensajes automáticos por WhatsApp al crear una solicitud de reabastecimiento:
+
+1. Crea un workflow en n8n Cloud que reciba un webhook (POST) y use Twilio para enviar el mensaje de WhatsApp.
+2. Obtén la URL del webhook de n8n y configúrala en tu entorno local o de producción:
+
+```
+VITE_N8N_WEBHOOK_URL=https://tu-n8n-url/webhook/whatsapp-replenishment
+```
+
+3. El sistema enviará automáticamente los datos de la solicitud a ese webhook cada vez que se cree una solicitud de reabastecimiento.
+
+El payload enviado será:
+
+```
+{
+  type: 'single' | 'multi',
+  request: { ... } | undefined, // para solicitudes simples
+  requests: [ ... ] | undefined, // para solicitudes múltiples
+  profile: { ... }, // datos del local
+  adminPhone: string // puedes ajustar el campo si tienes el teléfono del admin
+}
+```
+
+El workflow de n8n debe procesar estos datos y usar Twilio para enviar el mensaje de WhatsApp al proveedor correspondiente. 

@@ -4,7 +4,7 @@ import { ProfileProvider, useProfile } from '@/contexts/ProfileContext';
 import LoginForm from '@/components/Auth/LoginForm';
 import RegisterForm from '@/components/Auth/RegisterForm';
 import Dashboard from '@/components/Dashboard/Dashboard';
-import '@/index.css'; // asegúrate de importar tu CSS base
+import '@/index.css'; 
 import InitialProfileSelector from '@/components/Layout/InitialProfileSelector';
 
 const AppContent: React.FC = () => {

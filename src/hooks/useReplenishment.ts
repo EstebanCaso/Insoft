@@ -4,11 +4,34 @@ import { ReplenishmentRequest } from '@/types';
 import { useProfile } from '@/contexts/ProfileContext';
 import { useAuth } from '@/contexts/AuthContext';
 
+const N8N_WEBHOOK_URL = import.meta.env.VITE_N8N_WEBHOOK_URL;
+
 export const useReplenishment = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const { profile } = useProfile();
   const {  } = useAuth();
+
+  // Función para obtener el teléfono del admin (proveedor default)
+  const getAdminPhone = async (): Promise<string> => {
+    try {
+      const { data: { user: supaUser } } = await supabase.auth.getUser();
+      if (!supaUser || !profile) return '';
+
+      const { data: defaultSupplier } = await supabase
+        .from('suppliers')
+        .select('phone')
+        .eq('name', 'default')
+        .eq('user_id', supaUser.id)
+        .eq('profile_id', profile.id)
+        .single();
+
+      return defaultSupplier?.phone || '';
+    } catch (err) {
+      console.error('Error obteniendo teléfono del admin:', err);
+      return '';
+    }
+  };
 
   const createReplenishmentRequest = async (
     productId: string,
@@ -46,6 +69,29 @@ export const useReplenishment = () => {
 
       if (insertError) {
         throw insertError;
+      }
+
+      // Obtener el teléfono del admin
+      const adminPhone = await getAdminPhone();
+
+      // Notificar a n8n si está configurado
+      if (N8N_WEBHOOK_URL) {
+        try {
+          await fetch(N8N_WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'single',
+              request: data,
+              profile,
+              adminPhone,
+              productName: data.product?.name || '',
+              supplierPhone: data.supplier?.phone || '',
+            }),
+          });
+        } catch (err) {
+          console.error('Error notificando a n8n:', err);
+        }
       }
 
       return data;
@@ -227,7 +273,11 @@ export const useReplenishment = () => {
             requested_at: new Date().toISOString(),
             profile_id: profile?.id || null,
           })
-          .select('*')
+          .select(`
+            *,
+            product:products(*),
+            supplier:suppliers(*)
+          `)
           .single();
         if (insertError) {
           console.error('Error inserting replenishment request:', insertError);
@@ -235,6 +285,32 @@ export const useReplenishment = () => {
         }
         results.push(data);
       }
+
+      // Obtener el teléfono del admin
+      const adminPhone = await getAdminPhone();
+
+      // Notificar a n8n si está configurado
+      if (N8N_WEBHOOK_URL) {
+        try {
+          await fetch(N8N_WEBHOOK_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              type: 'multi',
+              requests: results.map(r => ({ 
+                ...r, 
+                productName: r.product?.name || '', 
+                supplierPhone: r.supplier?.phone || '' 
+              })),
+              profile,
+              adminPhone,
+            }),
+          });
+        } catch (err) {
+          console.error('Error notificando a n8n:', err);
+        }
+      }
+
       return results;
     } catch (err: any) {
       console.error('Error in createMultiReplenishmentRequest:', err);

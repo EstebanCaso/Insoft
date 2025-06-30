@@ -54,6 +54,15 @@ const Dashboard: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user, suppliers, isLoading]);
 
+  // Efecto para recargar datos al abrir la pestaña de inventario
+  useEffect(() => {
+    if (activeTab === 'inventory') {
+      loadData();
+      handleReplenishmentRefresh();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab]);
+
   // Título dinámico según la pestaña activa
   const tabTitles: Record<string, string> = {
     inventory: 'Inventario',

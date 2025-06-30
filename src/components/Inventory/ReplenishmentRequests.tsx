@@ -43,7 +43,7 @@ const ReplenishmentRequests: React.FC<{ onRequestCreated?: () => void }> = ({ on
       await loadRequests();
       await loadData(); // Recargar productos para actualizar el stock en la UI
       if (newStatus === 'approved') {
-        alert('Solicitud aprobada y stock actualizado.');
+        
       }
     } else {
       alert('Ocurrió un error al actualizar la solicitud.');
